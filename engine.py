@@ -41,11 +41,14 @@ def gestionar_despacho(
             f"Formato inválido: '{fecha_sistema}'. Se esperaba YYYY-MM-DD"
         )
 
+    if pedido_cliente < 0:
+        raise ValueError(f"pedido_cliente debe ser >= 0, se recibió {pedido_cliente}")
     if pedido_cliente == 0:
         return []
 
     # Filtrar aptos (R2) y ordenar FEFO (R1)
     lotes_aptos = [lote for lote in inventario if _es_lote_apto(lote, fecha_hoy)]
+    # ISO 8601 ordena lexicográficamente igual que por fecha — no requiere conversión
     lotes_fefo = sorted(lotes_aptos, key=lambda l: l["fecha_vencimiento"])
 
     # Validar stock acumulado (R3)
