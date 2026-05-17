@@ -65,7 +65,7 @@ def gestionar_despacho(
     stock_disponible: int = sum(lote["stock"] for lote in lotes_fefo)
     if stock_disponible < pedido_cliente:
         raise StockInsuficienteError(
-            f"Stock insuficiente: disponible={stock_disponible}, "
+            f"Stock Insuficiente: disponible={stock_disponible}, "
             f"pedido={pedido_cliente}, déficit={pedido_cliente - stock_disponible}"
         )
 
