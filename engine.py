@@ -10,7 +10,7 @@ DIAS_BLOQUEO_SEGURIDAD: int = 3
 
 def _es_lote_apto(lote: Lote, fecha_hoy: date) -> bool:
     """Retorna True si el lote supera el bloqueo de seguridad (R2: delta > 3 días)."""
-    fecha_vencimiento = datetime.strptime(lote["fecha_vencimiento"], "%Y-%m-%d").date()
+    fecha_vencimiento: date = datetime.strptime(lote["fecha_vencimiento"], "%Y-%m-%d").date()
     return (fecha_vencimiento - fecha_hoy).days > DIAS_BLOQUEO_SEGURIDAD
 
 
@@ -76,8 +76,8 @@ def gestionar_despacho(
     for lote in lotes_fefo:
         if pendiente == 0:
             break
-        cantidad_utilizada = min(lote["stock"], pendiente)
-        saldo_restante = lote["stock"] - cantidad_utilizada
+        cantidad_utilizada: int = min(lote["stock"], pendiente)
+        saldo_restante: int = lote["stock"] - cantidad_utilizada
         pendiente -= cantidad_utilizada
         resultado.append(ResultadoDespacho(
             id_lote=lote["id_lote"],
