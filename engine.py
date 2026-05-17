@@ -15,19 +15,29 @@ def _es_lote_apto(lote: Lote, fecha_hoy: date) -> bool:
 
 
 def gestionar_despacho(
-    inventario: list[Lote],
+    inventario: list[dict],
     pedido_cliente: int,
     fecha_sistema: str,
-) -> list[ResultadoDespacho]:
+) -> list[dict]:
     """Despacha unidades del inventario aplicando FEFO y bloqueo de seguridad.
 
+    Nota: `Lote` y `ResultadoDespacho` son TypedDicts (subclases de dict)
+    definidos en `domain/models.py`, compatibles con list[dict].
+
     Args:
-        inventario: Lista de lotes disponibles con id_lote, fecha_vencimiento y stock.
+        inventario: Lista de lotes disponibles. Cada dict contiene:
+            - id_lote (str): identificador único del lote.
+            - fecha_vencimiento (str, YYYY-MM-DD): fecha de vencimiento.
+            - stock (int): unidades disponibles en el lote.
         pedido_cliente: Cantidad total de unidades solicitadas.
         fecha_sistema: Fecha de referencia del sistema en formato "YYYY-MM-DD".
 
     Returns:
-        Lista de ResultadoDespacho con lotes afectados y saldos actualizados.
+        Lista de dicts con los lotes afectados. Cada dict contiene:
+            - id_lote (str): identificador del lote despachado.
+            - cantidad_utilizada (int): unidades tomadas del lote.
+            - saldo_restante (int): unidades que quedan en el lote tras el despacho.
+            - fecha_vencimiento (str): fecha de vencimiento del lote despachado.
 
     Raises:
         FechaInvalidaError: Si fecha_sistema no cumple el formato YYYY-MM-DD.
@@ -60,7 +70,7 @@ def gestionar_despacho(
         )
 
     # Ciclo de despacho (R4)
-    resultado: list[ResultadoDespacho] = []
+    resultado: list[dict] = []
     pendiente: int = pedido_cliente
 
     for lote in lotes_fefo:
