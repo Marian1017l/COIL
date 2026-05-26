@@ -1,4 +1,6 @@
 pytest==7.4.3
 pytest-json-report==1.5.0
-langchain==0.1.13
-langchain-ollama==0.1.1
+langchain>=1.0.0
+langchain-core>=1.0.0
+langchain-ollama>=1.0.0
+
