@@ -1,0 +1,9 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar las dependencias necesarias para las pruebas y el reporte JSON
+RUN pip install --no-cache-dir pytest pytest-json-report
+
+# Comando por defecto (será sobrescrito por el sandbox, pero asegura compatibilidad)
+CMD ["pytest"]

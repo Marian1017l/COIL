@@ -86,19 +86,12 @@ def construir_imagen_docker() -> str:
 
 @tool
 def ejecutar_tests_docker() -> str:
-    """
-    Ejecuta pytest dentro del contenedor Docker aislado y devuelve la salida completa.
-    Prerequisito: la imagen Docker guardian-sandbox debe estar construida.
-    """
-    resultado = subprocess.run(
-        ["docker", "run", "--rm", "--name", "guardian-run", DOCKER_IMAGE],
-        capture_output=True,
-        text=True,
-        timeout=180,
-        cwd=str(PROJECT_ROOT),
-    )
-    salida = (resultado.stdout + resultado.stderr).strip()
-    return salida if salida else "Sin salida del contenedor Docker."
+    """Ejecuta los tests usando el sandbox del proyecto."""
+    import json
+    import sandbox  # Importación directa porque son archivos hermanos
+    
+    res = sandbox.ejecutar_en_sandbox()
+    return json.dumps(res)
 
 
 @tool
