@@ -74,3 +74,6 @@ yarn.lock
 .env.local
 secrets.json
 
+veredicto.json
+.report.json
+test_generated.py

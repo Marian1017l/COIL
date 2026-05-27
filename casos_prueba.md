@@ -26,7 +26,7 @@ Antes de armar los casos, revisé las reglas principales del sistema:
 - **inventario:**
   - Lote A: 10 unidades, vence el 2025-06-20
   - Lote B: 10 unidades, vence el 2025-07-10
-- **qué debería pasar:** que salgan las 5 unidades del Lote A, porque vence primero.
+- **qué debería pasar:** 5 unidades del Lote A (`cantidad_utilizada=5`, `saldo_restante=5`). El Lote B no se toca.
 
 Acá solo quería confirmar que el sistema sí respeta el orden FEFO en el caso más simple posible.
 
@@ -39,7 +39,7 @@ Acá solo quería confirmar que el sistema sí respeta el orden FEFO en el caso 
 - **inventario:**
   - Lote A: 5 unidades, vence el 2025-06-15
   - Lote B: 10 unidades, vence el 2025-07-01
-- **qué debería pasar:** 5 unidades del Lote A y 5 del Lote B.
+- **qué debería pasar:** 5 unidades del Lote A (`cantidad_utilizada=5`, `saldo_restante=0`) + 5 unidades del Lote B (`cantidad_utilizada=5`, `saldo_restante=5`).
 
 Este caso lo pensé para ver si el sistema es capaz de repartir el pedido entre dos lotes cuando uno solo no es suficiente.
 
@@ -52,7 +52,7 @@ Este caso lo pensé para ver si el sistema es capaz de repartir el pedido entre 
 - **inventario:**
   - Lote A: 10 unidades, vence el 2025-06-04 (bloqueado)
   - Lote B: 10 unidades, vence el 2025-06-20
-- **qué debería pasar:** que salgan las 5 unidades del Lote B. El Lote A no se debe tocar.
+- **qué debería pasar:** 5 unidades del Lote B (`cantidad_utilizada=5`, `saldo_restante=5`). El Lote A no se debe tocar.
 
 Quería probar específicamente el límite de los 3 días, porque es fácil que ese borde falle.
 
@@ -65,7 +65,7 @@ Quería probar específicamente el límite de los 3 días, porque es fácil que 
 - **inventario:**
   - Lote A: 8 unidades, vence el 2025-06-02 (bloqueado)
   - Lote B: 8 unidades, vence el 2025-06-25
-- **qué debería pasar:** 3 unidades del Lote B. El Lote A no se usa.
+- **qué debería pasar:** 3 unidades del Lote B (`cantidad_utilizada=3`, `saldo_restante=5`). El Lote A no se usa.
 
 Similar al anterior pero más extremo. Si vence mañana, definitivamente no debería salir.
 
@@ -84,7 +84,7 @@ Solo hay 10 unidades aptas en total y el pedido es de 20. El sistema tiene que d
 
 ---
 
-### TC-06 — Todo bloqueado, nada disponible
+### TC-06 — Todo bloqueado, nada disponible (R2 + R3 combinados)
 
 - **fecha_sistema:** 2025-06-01
 - **pedido:** 5 unidades
@@ -104,7 +104,7 @@ Aunque hay unidades en bodega, ninguna está apta. El sistema no debería despac
 - **inventario:**
   - Lote A: 10 unidades, vence el 2025-06-03 (bloqueado)
   - Lote B: 10 unidades, vence el 2025-06-30
-- **qué debería pasar:** 10 unidades del Lote B.
+- **qué debería pasar:** 10 unidades del Lote B (`cantidad_utilizada=10`, `saldo_restante=0`).
 
 El único lote que sirve cubre exactamente el pedido. Lo puse para confirmar que el sistema no intenta mezclar con el bloqueado.
 
@@ -118,7 +118,7 @@ El único lote que sirve cubre exactamente el pedido. Lo puse para confirmar que
   - Lote A: 3 unidades, vence el 2025-06-10
   - Lote B: 4 unidades, vence el 2025-06-18
   - Lote C: 10 unidades, vence el 2025-07-05
-- **qué debería pasar:** 3 del Lote A + 4 del Lote B + 5 del Lote C.
+- **qué debería pasar:** 3 del Lote A (`cantidad_utilizada=3`, `saldo_restante=0`) + 4 del Lote B (`cantidad_utilizada=4`, `saldo_restante=0`) + 5 del Lote C (`cantidad_utilizada=5`, `saldo_restante=5`).
 
 Acá quería ver si el sistema maneja bien el reparto entre tres lotes distintos siguiendo el orden correcto.
 
@@ -143,7 +143,7 @@ Si no hay nada en bodega, el sistema debe responder limpio con el error, sin col
   - Lote A: 10 unidades, vence el 2025-06-04 (bloqueado)
   - Lote B: 4 unidades, vence el 2025-06-15
   - Lote C: 10 unidades, vence el 2025-06-28
-- **qué debería pasar:** 4 del Lote B + 2 del Lote C.
+- **qué debería pasar:** 4 del Lote B (`cantidad_utilizada=4`, `saldo_restante=0`) + 2 del Lote C (`cantidad_utilizada=2`, `saldo_restante=8`).
 
 Este fue uno de los que más me interesaba probar: que el sistema salte el lote bloqueado aunque sea el más próximo a vencer, y que luego reparta bien entre los siguientes.
 
@@ -156,5 +156,6 @@ Este fue uno de los que más me interesaba probar: que el sistema salte el lote 
 | R1 — FEFO | TC-01, TC-02, TC-08 |
 | R2 — Bloqueo de seguridad | TC-03, TC-04, TC-06, TC-07 |
 | R3 — Stock insuficiente | TC-05, TC-06, TC-09 |
+| R2 + R3 combinados | TC-06 |
 | R4 — R1 + R2 combinados | TC-10 |
-| Casos propios del QA | TC-09, TC-10 |
+| Casos propios del QA | TC-06, TC-09, TC-10 |

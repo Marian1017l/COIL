@@ -57,9 +57,9 @@ def gestionar_despacho(
         return []
 
     # Filtrar aptos (R2) y ordenar FEFO (R1)
-    lotes_aptos = [lote for lote in inventario if _es_lote_apto(lote, fecha_hoy)]
+    lotes_aptos: list[Lote] = [lote for lote in inventario if _es_lote_apto(lote, fecha_hoy)]
     # ISO 8601 ordena lexicográficamente igual que por fecha — no requiere conversión
-    lotes_fefo = sorted(lotes_aptos, key=lambda l: l["fecha_vencimiento"])
+    lotes_fefo: list[Lote] = sorted(lotes_aptos, key=lambda l: l["fecha_vencimiento"])
 
     # Validar stock acumulado (R3)
     stock_disponible: int = sum(lote["stock"] for lote in lotes_fefo)
