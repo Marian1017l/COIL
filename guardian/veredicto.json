@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-28T00:20:50.840791",
+  "modelo_ia": "qwen2.5-coder:7b",
+  "origen_casos": "C:\\Users\\JackelineR\\OneDrive\\Escritorio\\Software III\\COIL\\casos_prueba.md",
+  "engine_auditado": "C:\\Users\\JackelineR\\OneDrive\\Escritorio\\Software III\\COIL\\engine.py",
+  "tests_generados": "C:\\Users\\JackelineR\\OneDrive\\Escritorio\\Software III\\COIL\\test_generated.py",
+  "imagen_docker": "guardian-sandbox",
+  "passed": 10,
+  "failed": 0,
+  "bugs_detectados": 0,
+  "veredicto": "APROBADO",
+  "resumen_agente": "Todos los tests pasaron exitosamente. No se detectaron bugs."
+}
