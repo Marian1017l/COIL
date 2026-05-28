@@ -95,11 +95,16 @@ def ejecutar_tests_docker() -> str:
 
 
 @tool
-def guardar_veredicto(resumen: str) -> str:
+def guardar_veredicto(resumen: str, passed: int, failed: int, bugs_detectados: int) -> str:
     """
     Guarda el veredicto final en veredicto.json con metadatos de auditoría.
-    Recibe un resumen en texto plano con: total tests, pasados, fallidos y conclusión.
+    Args:
+        resumen: texto con lista de tests fallidos y conclusión.
+        passed: número de tests que pasaron (tomado del resultado de ejecutar_tests_docker).
+        failed: número de tests que fallaron.
+        bugs_detectados: número de bugs detectados (= failed + errores de colección).
     """
+    veredicto = "APROBADO" if bugs_detectados == 0 and passed > 0 else "RECHAZADO"
     payload = {
         "timestamp":        datetime.now().isoformat(),
         "modelo_ia":        MODEL,
@@ -107,6 +112,10 @@ def guardar_veredicto(resumen: str) -> str:
         "engine_auditado":  str(ENGINE_FILE),
         "tests_generados":  str(TESTS_FILE),
         "imagen_docker":    DOCKER_IMAGE,
+        "passed":           passed,
+        "failed":           failed,
+        "bugs_detectados":  bugs_detectados,
+        "veredicto":        veredicto,
         "resumen_agente":   resumen,
     }
     VERDICT_FILE.write_text(
@@ -139,20 +148,37 @@ PASO 2 — Leer casos de prueba
   Llama leer_casos_prueba para obtener los 10 escenarios documentados en casos_prueba.md (TC-01 a TC-10).
 
 PASO 3 — Generar código Pytest
-  Analiza el motor y los casos leídos. Genera un archivo Python con EXACTAMENTE 10 funciones test_
-  (una por cada caso TC-01 a TC-10, sin omitir ninguna). El archivo debe empezar con:
+  Genera un archivo Python con EXACTAMENTE 10 funciones test_ (TC-01 a TC-10). Empieza con:
     import pytest
     from engine import gestionar_despacho
     from domain.exceptions import StockInsuficienteError, FechaInvalidaError
 
-  Reglas estrictas para cada test:
-  - Casos de despacho exitoso (TC-01, TC-02, TC-03, TC-04, TC-07, TC-08, TC-10):
+  REGLA DE ORO: pytest.raises SOLO cuando el stock de lotes NO BLOQUEADOS es menor que el pedido.
+  Un lote bloqueado se OMITE — si los demás cubren el pedido, el despacho ES EXITOSO (usa assert).
+
+  Instrucciones por caso (inventario, pedido → resultado esperado):
+    TC-01 assert 1-lote  : [A:10u/2025-06-20, B:10u/2025-07-10], p=5  → A cant=5 saldo=5
+    TC-02 assert 2-lotes : [A:5u/2025-06-15, B:10u/2025-07-01], p=10  → A:5/0, B:5/5
+    TC-03 assert 1-lote  : [A:10u/2025-06-04(BLOQUEADO), B:10u/2025-06-20], p=5  → B cant=5 saldo=5
+    TC-04 assert 1-lote  : [A:8u/2025-06-02(BLOQUEADO), B:8u/2025-06-25], p=3   → B cant=3 saldo=5
+    TC-05 pytest.raises  : [A:5u/2025-06-20, B:5u/2025-07-10], p=20 → StockInsuficienteError
+    TC-06 pytest.raises  : [A:10u/2025-06-02(BLOQUEADO), B:10u/2025-06-03(BLOQUEADO)], p=5 → StockInsuficienteError
+    TC-07 assert 1-lote  : [A:10u/2025-06-03(BLOQUEADO), B:10u/2025-06-30], p=10 → B cant=10 saldo=0
+    TC-08 assert 3-lotes : [A:3u/2025-06-10, B:4u/2025-06-18, C:10u/2025-07-05], p=12 → A:3/0, B:4/0, C:5/5
+    TC-09 pytest.raises  : [], p=5 → StockInsuficienteError
+    TC-10 assert 2-lotes : [A:10u/2025-06-04(BLOQUEADO), B:4u/2025-06-15, C:10u/2025-06-28], p=6 → B:4/0, C:2/8
+
+  TC-03/04/07/10: el lote BLOQUEADO se salta, el siguiente cubre el pedido. NUNCA pytest.raises.
+  TC-05: stock=5 por lote (total=10 < pedido=20). Con stock=10 la excepción NO se lanza (20<20 es False).
+
+  Patrón assert:
       resultado = gestionar_despacho([...], pedido, fecha)
-      assert len(resultado) == <n_lotes_esperados>
-      assert resultado[0]["id_lote"] == "..."
-      assert resultado[0]["cantidad_utilizada"] == <valor>
-      assert resultado[0]["saldo_restante"] == <valor>
-  - Casos de error (TC-05, TC-06, TC-09): USA SIEMPRE pytest.raises, NUNCA try/except:
+      assert len(resultado) == N
+      assert resultado[i]["id_lote"] == "X"
+      assert resultado[i]["cantidad_utilizada"] == VAL
+      assert resultado[i]["saldo_restante"] == VAL
+
+  Patrón pytest.raises:
       with pytest.raises(StockInsuficienteError) as exc_info:
           gestionar_despacho([...], pedido, fecha)
       assert "Stock Insuficiente" in str(exc_info.value)
@@ -168,7 +194,15 @@ PASO 5 — Ejecutar tests en Docker
   Analiza la salida: cuántos pasaron, cuántos fallaron.
 
 PASO 6 — Guardar veredicto auditable
-  Llama guardar_veredicto con un resumen que incluya: total tests, pasados, fallidos, lista de fallidos y conclusión APROBADO/RECHAZADO.
+  Llama guardar_veredicto con los valores exactos del resultado de ejecutar_tests_docker:
+    - resumen: texto con lista de tests fallidos (o "ninguno") y conclusión APROBADO/RECHAZADO.
+    - passed: el valor numérico de "passed" del resultado del sandbox.
+    - failed: el valor numérico de "failed" del resultado del sandbox.
+    - bugs_detectados: el valor numérico de "bugs_detectados" del resultado del sandbox.
+    
+CRÍTICO: NUNCA termines con texto libre después de ejecutar_tests_docker.
+El ÚNICO camino válido es llamar guardar_veredicto como último paso.
+Responde SOLO con el JSON de tool call hasta que guardar_veredicto haya sido ejecutado.    
 
 Ejecuta una herramienta a la vez. Espera el resultado antes de continuar con el siguiente paso."""
 
