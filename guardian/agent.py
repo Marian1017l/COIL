@@ -153,35 +153,37 @@ PASO 3 — Generar código Pytest
     from engine import gestionar_despacho
     from domain.exceptions import StockInsuficienteError, FechaInvalidaError
 
-  REGLA DE ORO: pytest.raises SOLO cuando el stock de lotes NO BLOQUEADOS es menor que el pedido.
-  Un lote bloqueado se OMITE — si los demás cubren el pedido, el despacho ES EXITOSO (usa assert).
+  Para cada caso TC-XX leído en casos_prueba.md, sigue estos pasos en orden:
 
-  Instrucciones por caso (inventario, pedido → resultado esperado):
-    TC-01 assert 1-lote  : [A:10u/2025-06-20, B:10u/2025-07-10], p=5  → A cant=5 saldo=5
-    TC-02 assert 2-lotes : [A:5u/2025-06-15, B:10u/2025-07-01], p=10  → A:5/0, B:5/5
-    TC-03 assert 1-lote  : [A:10u/2025-06-04(BLOQUEADO), B:10u/2025-06-20], p=5  → B cant=5 saldo=5
-    TC-04 assert 1-lote  : [A:8u/2025-06-02(BLOQUEADO), B:8u/2025-06-25], p=3   → B cant=3 saldo=5
-    TC-05 pytest.raises  : [A:5u/2025-06-20, B:5u/2025-07-10], p=20 → StockInsuficienteError
-    TC-06 pytest.raises  : [A:10u/2025-06-02(BLOQUEADO), B:10u/2025-06-03(BLOQUEADO)], p=5 → StockInsuficienteError
-    TC-07 assert 1-lote  : [A:10u/2025-06-03(BLOQUEADO), B:10u/2025-06-30], p=10 → B cant=10 saldo=0
-    TC-08 assert 3-lotes : [A:3u/2025-06-10, B:4u/2025-06-18, C:10u/2025-07-05], p=12 → A:3/0, B:4/0, C:5/5
-    TC-09 pytest.raises  : [], p=5 → StockInsuficienteError
-    TC-10 assert 2-lotes : [A:10u/2025-06-04(BLOQUEADO), B:4u/2025-06-15, C:10u/2025-06-28], p=6 → B:4/0, C:2/8
+  3a. CLASIFICAR el test leyendo ÚNICAMENTE el campo "qué debería pasar" del caso:
+      - Contiene "error" o "Stock Insuficiente"          → test de ERROR  → usa pytest.raises
+      - Contiene "cantidad_utilizada" y "saldo_restante" → test EXITOSO   → usa assert
+      La palabra "(bloqueado)" aparece en el inventario, NO en "qué debería pasar".
+      NO uses "(bloqueado)" como señal de error; clasifica SOLO por "qué debería pasar".
 
-  TC-03/04/07/10: el lote BLOQUEADO se salta, el siguiente cubre el pedido. NUNCA pytest.raises.
-  TC-05: stock=5 por lote (total=10 < pedido=20). Con stock=10 la excepción NO se lanza (20<20 es False).
+  3b. EXTRAER datos del inventario del caso:
+      Lee el id, las unidades (stock) y la fecha de vencimiento de cada lote.
+      Usa exactamente los valores escritos. No cambies ningún número ni fecha.
 
-  Patrón assert:
-      resultado = gestionar_despacho([...], pedido, fecha)
-      assert len(resultado) == N
-      assert resultado[i]["id_lote"] == "X"
-      assert resultado[i]["cantidad_utilizada"] == VAL
-      assert resultado[i]["saldo_restante"] == VAL
+  3c. APLICAR la regla de bloqueo R2:
+      Un lote marcado "(bloqueado)" se omite — no es un error por sí mismo.
+      Solo hay StockInsuficienteError cuando el stock total de lotes NO bloqueados < pedido.
+      Si hay lotes aptos que cubren el pedido, el resultado es despacho exitoso (assert).
 
-  Patrón pytest.raises:
-      with pytest.raises(StockInsuficienteError) as exc_info:
-          gestionar_despacho([...], pedido, fecha)
-      assert "Stock Insuficiente" in str(exc_info.value)
+  3d. ESCRIBIR el test según la clasificación de 3a:
+
+      Test EXITOSO:
+          resultado = gestionar_despacho([...inventario...], pedido, fecha_sistema)
+          assert len(resultado) == <lotes mencionados en "qué debería pasar">
+          assert resultado[0]["id_lote"] == "<id del primer lote despachado>"
+          assert resultado[0]["cantidad_utilizada"] == <valor del caso>
+          assert resultado[0]["saldo_restante"] == <valor del caso>
+          # Añade resultado[1], resultado[2]... si el caso reparte entre más lotes.
+
+      Test de ERROR:
+          with pytest.raises(StockInsuficienteError) as exc_info:
+              gestionar_despacho([...inventario...], pedido, fecha_sistema)
+          assert "Stock Insuficiente" in str(exc_info.value)
 
   Llama guardar_tests con el código completo como argumento "codigo".
   IMPORTANTE: genera los 10 tests completos antes de llamar guardar_tests.

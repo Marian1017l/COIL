@@ -160,20 +160,6 @@ Este fue uno de los que más me interesaba probar: que el sistema salte el lote 
 
 ---
 
-### TC-11 — Lotes parcialmente bloqueados y stock insuficiente (R2 + R3 juntos)
-
-- **fecha_sistema:** 2025-06-01
-- **pedido_cliente:** 15
-- **inventario:**
-  - Lote A: 10 unidades, vence el 2025-06-03 (bloqueado)
-  - Lote B: 4 unidades, vence el 2025-06-20
-  - Lote C: 3 unidades, vence el 2025-07-01
-- **qué debería pasar:** error `"Stock Insuficiente"`
-
-Lo diseñé para combinar el bloqueo de seguridad con el stock insuficiente al mismo tiempo. El Lote A está bloqueado, y los lotes aptos solo suman 7 unidades, que no alcanzan para el pedido de 15. El sistema tiene que ignorar el bloqueado y darse cuenta de que no hay suficiente stock apto.
-
----
-
 ## Resumen de cobertura
 
 | Regla | Casos |
@@ -183,4 +169,4 @@ Lo diseñé para combinar el bloqueo de seguridad con el stock insuficiente al m
 | R3 — Stock insuficiente | TC-05, TC-06, TC-09 |
 | R2 + R3 combinados | TC-06 |
 | R4 — R1 + R2 combinados | TC-10 |
-| Casos propios del QA | TC-10 (R1+R2), TC-11 (R2+R3) |
+| Casos propios del QA | TC-10 (R1+R2) |
